@@ -39,7 +39,6 @@
         <label class="block font-bold text-gray-700 mb-1">4. 請假原因 *</label>
         <select id="leaveReason" required class="w-full p-2 border border-gray-300 rounded focus:border-orange-500 outline-none bg-white">
           <option value="" disabled selected>-- 請選擇請假原因 --</option>
-          <option value="事假">事假</option>
           <option value="病假">病假 (請後補醫生紙)</option>
           <option value="返學/考試">返學 / 考試</option>
           <option value="返工">返工</option>
@@ -48,8 +47,8 @@
       </div>
 
       <div id="otherReasonContainer" class="hidden">
-        <label class="block font-bold text-red-600 mb-1">請註明詳細原因 (選填，鼓勵填寫)</label>
-        <input type="text" id="otherReasonInput" placeholder="💡 請盡量填寫具體原因，方便長官審批" class="w-full p-2 border border-red-300 rounded focus:border-red-500 outline-none">
+        <label class="block font-bold text-red-600 mb-1">請註明詳細原因 *</label>
+        <input type="text" id="otherReasonInput" placeholder="⚠️ 必須輸入具體原因，否則無法提交" class="w-full p-2 border border-red-300 rounded focus:border-red-500 outline-none">
       </div>
 
       <button type="submit" id="submitBtn" class="w-full mt-4 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition flex justify-center items-center gap-2">
@@ -94,26 +93,26 @@
     const otherReasonInput = document.getElementById('otherReasonInput');
     const submitBtn = document.getElementById('submitBtn');
 
-    // 當網頁載入完成時，進行初始化邏輯
+    // 初始化邏輯
     window.addEventListener('DOMContentLoaded', () => {
-      // 1. 自動填寫已記憶的姓名及編號
       if (localStorage.getItem('casName')) document.getElementById('chineseName').value = localStorage.getItem('casName');
       if (localStorage.getItem('casNumber')) document.getElementById('casNumber').value = localStorage.getItem('casNumber');
       
-      // 2. 強制清空下拉選單，逼使用家每次重新選擇
       leaveReasonSelect.value = '';
       otherReasonContainer.classList.add('hidden');
       otherReasonInput.value = '';
+      otherReasonInput.required = false;
     });
 
-    // 監聽請假原因改變
+    // ✨ 核心升級邏輯：只有揀「其他」先會變為 required 必填，否則就隱藏並取消必填
     leaveReasonSelect.addEventListener('change', function() {
       if (this.value === '其他') {
         otherReasonContainer.classList.remove('hidden');
-        otherReasonInput.required = false; // 絕對保證非必填
+        otherReasonInput.required = true; // 強制設定為必填，唔填無得 submit
       } else {
         otherReasonContainer.classList.add('hidden');
         otherReasonInput.value = '';
+        otherReasonInput.required = false; // 其他選項下，取消必填限制
       }
     });
 
@@ -132,28 +131,27 @@
       let reason = leaveReasonSelect.value;
       if (reason === '其他') {
         const details = otherReasonInput.value.trim();
-        reason = details ? `其他 (${details})` : '其他'; // 有填詳細就加括號，冇填就淨係寫「其他」
+        reason = `其他 (${details})`; // 因為是必填，所以一定有詳細原因文字
       }
 
-      // 記憶最新姓名及編號
       localStorage.setItem('casName', name);
       localStorage.setItem('casNumber', number);
 
       const message = `📋 *CD4 恆常訓練請假*\n\n📅 日期：${date}\n👤 姓名：${name}\n🔢 編號：${number}\n❓ 原因：${reason}\n\n長官，我想申請以上日子請假，唔該晒！`;
       const whatsappUrl = `https://wa.me/85268476367?text=${encodeURIComponent(message)}`;
 
-      // 真正補回的 sendBeacon 技術：確保跳轉 WhatsApp 時，資料 100% 成功傳去 Google Sheet
+      // sendBeacon 同步技術
       const payload = JSON.stringify({ date, name, number, reason });
       const blob = new Blob([payload], { type: 'text/plain' });
       navigator.sendBeacon(GOOGLE_SCRIPT_URL, blob);
 
-      // 直接跳轉，不再使用任何延遲，防止瀏覽器攔截
+      // 直接跳轉 WhatsApp
       window.location.href = whatsappUrl;
 
       setTimeout(() => {
         submitBtn.disabled = false;
         submitBtn.className = "w-full mt-4 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition flex justify-center items-center gap-2";
-        submitBtn.innerHTML = `用 WhatsApp 提交並同步`; // 簡單恢復按鈕文字
+        submitBtn.innerHTML = `用 WhatsApp 提交並同步`;
       }, 1500);
     });
 
@@ -194,7 +192,7 @@
           });
         }
       } catch (error) {
-        historyTableBody.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-red-500">匯入失敗！請確保 Google Sheet 有正確設定為「任何人 (Anyone)」存取。</td></tr>`;
+        historyTableBody.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-red-500">匯入失敗！請確保 Google Sheet 有正確設定。</td></tr>`;
       } finally {
         importBtn.innerHTML = '🔄 從 Google Sheet 匯入最新數據';
         importBtn.disabled = false;
