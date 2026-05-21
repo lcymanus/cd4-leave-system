@@ -22,7 +22,8 @@
     <form id="leaveForm" class="p-6 space-y-5">
       <div>
         <label class="block font-bold text-gray-700 mb-1">1. 恆常訓練日期 *</label>
-        <input type="date" id="trainingDate" required class="w-full p-2 border border-gray-300 rounded focus:border-orange-500 outline-none">
+        <select id="trainingDate" required class="w-full p-2 border border-gray-300 rounded focus:border-orange-500 outline-none bg-white">
+          </select>
       </div>
 
       <div>
@@ -61,41 +62,179 @@
     </form>
   </div>
 
-  <div id="adminDashboard" class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 border border-gray-200 hidden">
-    <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+  <div id="adminDashboard" class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 border border-gray-200 hidden mb-10">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
       <h2 class="text-xl font-bold text-gray-800">📋 CD4 雲端請假紀錄中央後台</h2>
       <button id="importBtn" class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
         🔄 從 Google Sheet 匯入最新數據
       </button>
     </div>
+
+    <div class="mb-8 border-b pb-6">
+      <h3 class="text-lg font-bold text-gray-700 mb-3">📅 管理訓練日期</h3>
+      <div class="flex flex-col md:flex-row gap-2 mb-4">
+        <input type="date" id="newDateInput" class="p-2 border border-gray-300 rounded outline-none focus:border-orange-500 flex-1">
+        <input type="text" id="newTimeInput" value="15:00-18:00" placeholder="時間 (例如: 15:00-18:00)" class="p-2 border border-gray-300 rounded outline-none focus:border-orange-500 flex-1">
+        <button id="addDateBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-semibold">➕ 新增</button>
+      </div>
+      
+      <div class="overflow-x-auto border rounded-lg">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600 font-medium border-b">
+              <th class="p-3">已設定日期</th>
+              <th class="p-3">時間</th>
+              <th class="p-3 text-center w-24">操作</th>
+            </tr>
+          </thead>
+          <tbody id="dateListBody" class="divide-y text-gray-700 bg-white">
+            </tbody>
+        </table>
+      </div>
+    </div>
     
-    <div class="overflow-x-auto border rounded-lg">
-      <table class="w-full text-left border-collapse text-sm">
-        <thead>
-          <tr class="bg-gray-100 text-gray-600 font-medium border-b">
-            <th class="p-3">訓練日期</th>
-            <th class="p-3">姓名</th>
-            <th class="p-3">民安隊編號</th>
-            <th class="p-3">請假原因</th>
-          </tr>
-        </thead>
-        <tbody id="historyTableBody" class="divide-y text-gray-700">
-          <tr><td colSpan="4" class="p-8 text-center text-gray-400">請點擊上方按鈕匯入數據</td></tr>
-        </tbody>
-      </table>
+    <div>
+      <h3 class="text-lg font-bold text-gray-700 mb-3">☁️ 雲端請假紀錄</h3>
+      <div class="overflow-x-auto border rounded-lg">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600 font-medium border-b">
+              <th class="p-3">訓練日期</th>
+              <th class="p-3">姓名</th>
+              <th class="p-3">民安隊編號</th>
+              <th class="p-3">請假原因</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody" class="divide-y text-gray-700 bg-white">
+            <tr><td colSpan="4" class="p-8 text-center text-gray-400">請點擊上方按鈕匯入數據</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRTLakBEb4yIjRLS24vdRYtT9LhiYZa_F3egTAeij_If6y7vY6IpRS9WXhiRPg2MzEMQ/exec';
 
+    const trainingDateSelect = document.getElementById('trainingDate');
     const leaveReasonSelect = document.getElementById('leaveReason');
     const otherReasonContainer = document.getElementById('otherReasonContainer');
     const otherReasonInput = document.getElementById('otherReasonInput');
     const submitBtn = document.getElementById('submitBtn');
 
-    // 初始化邏輯
+    // === 日期管理系統 ===
+    function loadTrainingDates() {
+      const dates = JSON.parse(localStorage.getItem('customTrainingDates')) || [];
+      return dates;
+    }
+
+    function saveTrainingDates(dates) {
+      // 確保按日期排序
+      dates.sort((a, b) => new Date(a.date) - new Date(b.date));
+      localStorage.setItem('customTrainingDates', JSON.stringify(dates));
+    }
+
+    // 更新前台的下拉選單
+    function renderFrontendDateSelect() {
+      const dates = loadTrainingDates();
+      trainingDateSelect.innerHTML = '';
+      
+      if (dates.length === 0) {
+        const option = document.createElement('option');
+        option.value = "";
+        option.disabled = true;
+        option.selected = true;
+        option.textContent = "暫無可選訓練日期，請聯絡管理員";
+        trainingDateSelect.appendChild(option);
+      } else {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        defaultOption.textContent = "-- 請選擇訓練日期 --";
+        trainingDateSelect.appendChild(defaultOption);
+
+        dates.forEach(d => {
+          const option = document.createElement('option');
+          // 將數值設為完整字串以帶入後續提交
+          const fullDateString = `${d.date} (${d.time})`;
+          option.value = fullDateString;
+          option.textContent = fullDateString;
+          trainingDateSelect.appendChild(option);
+        });
+      }
+    }
+
+    // 更新後台的日期列表
+    function renderAdminDateList() {
+      const dateListBody = document.getElementById('dateListBody');
+      const dates = loadTrainingDates();
+      dateListBody.innerHTML = '';
+
+      if (dates.length === 0) {
+        dateListBody.innerHTML = `<tr><td colSpan="3" class="p-6 text-center text-gray-500">尚未設定任何訓練日期</td></tr>`;
+      } else {
+        dates.forEach((d, index) => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-gray-50 transition";
+          tr.innerHTML = `
+            <td class="p-3 font-medium text-gray-800">${d.date}</td>
+            <td class="p-3 text-gray-600">${d.time}</td>
+            <td class="p-3 text-center">
+              <button onclick="deleteDate(${index})" class="text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded text-xs font-bold border border-red-200">刪除</button>
+            </td>
+          `;
+          dateListBody.appendChild(tr);
+        });
+      }
+    }
+
+    // 新增日期按鈕事件
+    document.getElementById('addDateBtn').addEventListener('click', () => {
+      const dateVal = document.getElementById('newDateInput').value;
+      const timeVal = document.getElementById('newTimeInput').value.trim();
+      
+      if (!dateVal || !timeVal) {
+        alert('請填寫完整的日期與時間！');
+        return;
+      }
+
+      const dates = loadTrainingDates();
+      // 避免重複加入相同日期
+      const exists = dates.some(d => d.date === dateVal && d.time === timeVal);
+      if (exists) {
+        alert('該日期與時間已存在！');
+        return;
+      }
+
+      dates.push({ date: dateVal, time: timeVal });
+      saveTrainingDates(dates);
+      
+      // 更新介面
+      renderAdminDateList();
+      renderFrontendDateSelect();
+      
+      // 清空輸入框（保留預設時間）
+      document.getElementById('newDateInput').value = '';
+    });
+
+    // 刪除日期功能 (綁定在全域以供 onclick 呼叫)
+    window.deleteDate = function(index) {
+      if(confirm('確定要刪除這個訓練日期嗎？')) {
+        const dates = loadTrainingDates();
+        dates.splice(index, 1);
+        saveTrainingDates(dates);
+        renderAdminDateList();
+        renderFrontendDateSelect();
+      }
+    };
+
+    // === 初始化邏輯 ===
     window.addEventListener('DOMContentLoaded', () => {
+      // 載入前台日期選單
+      renderFrontendDateSelect();
+      renderAdminDateList();
+
       if (localStorage.getItem('casName')) document.getElementById('chineseName').value = localStorage.getItem('casName');
       if (localStorage.getItem('casNumber')) document.getElementById('casNumber').value = localStorage.getItem('casNumber');
       
@@ -125,7 +264,7 @@
       submitBtn.className = "w-full mt-4 bg-gray-400 text-white font-bold py-3 px-4 rounded-lg flex justify-center items-center gap-2 cursor-not-allowed";
       submitBtn.innerText = '🚀 正在啟動特快通道...';
       
-      const date = document.getElementById('trainingDate').value;
+      const date = trainingDateSelect.value;
       const name = document.getElementById('chineseName').value;
       const number = document.getElementById('casNumber').value.toUpperCase();
       
@@ -156,7 +295,7 @@
       }, 1500);
     });
 
-    // 管理員後台邏輯
+    // === 管理員後台邏輯 ===
     const loginBtn = document.getElementById('loginBtn');
     const importBtn = document.getElementById('importBtn');
     const adminPasswordInput = document.getElementById('adminPassword');
@@ -177,10 +316,8 @@
           historyTableBody.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-gray-500">Google Sheet 目前沒有任何紀錄</td></tr>`;
         } else {
           records.reverse().forEach(item => {
-            let displayDate = item.date;
-            if (item.date && !isNaN(Date.parse(item.date))) {
-              displayDate = new Date(item.date).toLocaleDateString('zh-HK');
-            }
+            // 因現在 payload 傳的是 "YYYY-MM-DD (HH:MM)" 格式的字串，所以不強制轉換回 Date 格式，直接顯示
+            let displayDate = item.date; 
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-50 transition";
             tr.innerHTML = `
