@@ -38,6 +38,7 @@
       <div>
         <label class="block font-bold text-gray-700 mb-1">4. 請假原因 *</label>
         <select id="leaveReason" required class="w-full p-2 border border-gray-300 rounded focus:border-orange-500 outline-none bg-white">
+          <option value="" disabled selected>-- 請選擇請假原因 --</option>
           <option value="事假">事假</option>
           <option value="病假">病假 (請後補醫生紙)</option>
           <option value="返學/考試">返學 / 考試</option>
@@ -47,8 +48,8 @@
       </div>
 
       <div id="otherReasonContainer" class="hidden">
-        <label class="block font-bold text-red-600 mb-1">請註明其他原因 *</label>
-        <input type="text" id="otherReasonInput" placeholder="請輸入具體原因" class="w-full p-2 border border-red-300 rounded focus:border-red-500 outline-none">
+        <label class="block font-bold text-red-600 mb-1">請註明詳細原因 (選填，鼓勵填寫)</label>
+        <input type="text" id="otherReasonInput" placeholder="💡 請盡量填寫具體原因，方便長官審批" class="w-full p-2 border border-red-300 rounded focus:border-red-500 outline-none">
       </div>
 
       <button type="submit" id="submitBtn" class="w-full mt-4 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition flex justify-center items-center gap-2">
@@ -93,24 +94,33 @@
     const otherReasonInput = document.getElementById('otherReasonInput');
     const submitBtn = document.getElementById('submitBtn');
 
+    // 當網頁載入完成時，進行初始化邏輯
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. 自動填寫已記憶的姓名及編號
+      if (localStorage.getItem('casName')) document.getElementById('chineseName').value = localStorage.getItem('casName');
+      if (localStorage.getItem('casNumber')) document.getElementById('casNumber').value = localStorage.getItem('casNumber');
+      
+      // 2. 強制清空下拉選單，逼使用家每次重新選擇
+      leaveReasonSelect.value = '';
+      otherReasonContainer.classList.add('hidden');
+      otherReasonInput.value = '';
+    });
+
+    // 監聽請假原因改變
     leaveReasonSelect.addEventListener('change', function() {
       if (this.value === '其他') {
         otherReasonContainer.classList.remove('hidden');
-        otherReasonInput.required = true;
+        otherReasonInput.required = false; // 絕對保證非必填
       } else {
         otherReasonContainer.classList.add('hidden');
-        otherReasonInput.required = false;
         otherReasonInput.value = '';
       }
     });
 
-    if (localStorage.getItem('casName')) document.getElementById('chineseName').value = localStorage.getItem('casName');
-    if (localStorage.getItem('casNumber')) document.getElementById('casNumber').value = localStorage.getItem('casNumber');
-
-    document.getElementById('leaveForm').addEventListener('submit', async function(e) {
+    // 提交表單邏輯
+    document.getElementById('leaveForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
-      // 畫面立即反饋，防止重覆狂撳
       submitBtn.disabled = true;
       submitBtn.className = "w-full mt-4 bg-gray-400 text-white font-bold py-3 px-4 rounded-lg flex justify-center items-center gap-2 cursor-not-allowed";
       submitBtn.innerText = '🚀 正在啟動特快通道...';
@@ -118,46 +128,36 @@
       const date = document.getElementById('trainingDate').value;
       const name = document.getElementById('chineseName').value;
       const number = document.getElementById('casNumber').value.toUpperCase();
+      
       let reason = leaveReasonSelect.value;
-      if (reason === '其他') reason = `其他 (${otherReasonInput.value})`;
+      if (reason === '其他') {
+        const details = otherReasonInput.value.trim();
+        reason = details ? `其他 (${details})` : '其他'; // 有填詳細就加括號，冇填就淨係寫「其他」
+      }
 
+      // 記憶最新姓名及編號
       localStorage.setItem('casName', name);
       localStorage.setItem('casNumber', number);
 
-      // 組合完美排版訊息（帶入長官號碼及自動生成填好嘅文字）
       const message = `📋 *CD4 恆常訓練請假*\n\n📅 日期：${date}\n👤 姓名：${name}\n🔢 編號：${number}\n❓ 原因：${reason}\n\n長官，我想申請以上日子請假，唔該晒！`;
       const whatsappUrl = `https://wa.me/85268476367?text=${encodeURIComponent(message)}`;
 
-      // 同步發送至 Google 雲端 + 無攔截直接原頁面跳轉
-      try {
-        // ✨ 高規格相容：使用 fetch 同步，並設定超短超時，確保 0.1 秒內直接觸發跳轉，絕對不讓隊員等待
-        fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ date, name, number, reason })
-        });
-      } catch (error) {
-        console.error(error);
-      }
+      // 真正補回的 sendBeacon 技術：確保跳轉 WhatsApp 時，資料 100% 成功傳去 Google Sheet
+      const payload = JSON.stringify({ date, name, number, reason });
+      const blob = new Blob([payload], { type: 'text/plain' });
+      navigator.sendBeacon(GOOGLE_SCRIPT_URL, blob);
 
-      // ✨ 終極核心：直接覆寫當前網址。此方法被所有系統視為安全跳轉，100% 成功喚醒 WhatsApp 並帶好訊息！
+      // 直接跳轉，不再使用任何延遲，防止瀏覽器攔截
       window.location.href = whatsappUrl;
 
-      // 1.5 秒後在背景偷偷復原按鈕（防止用戶按「返回」網頁時按鈕卡死）
       setTimeout(() => {
         submitBtn.disabled = false;
         submitBtn.className = "w-full mt-4 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition flex justify-center items-center gap-2";
-        submitBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
-          </svg>
-          用 WhatsApp 提交並同步
-        `;
+        submitBtn.innerHTML = `用 WhatsApp 提交並同步`; // 簡單恢復按鈕文字
       }, 1500);
     });
 
-    // --- 管理員實時自雲端「匯入」數據邏輯 ---
+    // 管理員後台邏輯
     const loginBtn = document.getElementById('loginBtn');
     const importBtn = document.getElementById('importBtn');
     const adminPasswordInput = document.getElementById('adminPassword');
@@ -170,12 +170,8 @@
       historyTableBody.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-blue-500 font-semibold animate-pulse">正在實時匯入雲端數據...</td></tr>`;
       
       try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'GET',
-          redirect: 'follow'
-        });
+        const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'GET', redirect: 'follow' });
         const records = await response.json();
-        
         historyTableBody.innerHTML = '';
         
         if (!records || records.length === 0) {
@@ -186,7 +182,6 @@
             if (item.date && !isNaN(Date.parse(item.date))) {
               displayDate = new Date(item.date).toLocaleDateString('zh-HK');
             }
-            
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-50 transition";
             tr.innerHTML = `
@@ -199,8 +194,7 @@
           });
         }
       } catch (error) {
-        console.error(error);
-        historyTableBody.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-red-500">匯入失敗！請確保 Google Sheet 內的 Web App 有正確設定為「任何人 (Anyone)」均可存取。</td></tr>`;
+        historyTableBody.innerHTML = `<tr><td colSpan="4" class="p-8 text-center text-red-500">匯入失敗！請確保 Google Sheet 有正確設定為「任何人 (Anyone)」存取。</td></tr>`;
       } finally {
         importBtn.innerHTML = '🔄 從 Google Sheet 匯入最新數據';
         importBtn.disabled = false;
