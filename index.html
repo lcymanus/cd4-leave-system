@@ -48,7 +48,7 @@
 
       <div id="otherReasonContainer" class="hidden">
         <label class="block font-bold text-red-600 mb-1">請註明詳細原因 *</label>
-        <input type="text" id="otherReasonInput" placeholder="⚠️ 必須輸入具體原因，否則無法提交" class="w-full p-2 border border-red-300 rounded focus:border-red-500 outline-none">
+        <input type="text" id="otherReasonInput" placeholder="💡 請提供具體請假原因，以方便長官作評估及審批" class="w-full p-2 border border-red-300 rounded focus:border-red-500 outline-none">
       </div>
 
       <button type="submit" id="submitBtn" class="w-full mt-4 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition flex justify-center items-center gap-2">
@@ -104,15 +104,15 @@
       otherReasonInput.required = false;
     });
 
-    // ✨ 核心升級邏輯：只有揀「其他」先會變為 required 必填，否則就隱藏並取消必填
+    // 核心升級邏輯：只有揀「其他」先會變為 required 必填
     leaveReasonSelect.addEventListener('change', function() {
       if (this.value === '其他') {
         otherReasonContainer.classList.remove('hidden');
-        otherReasonInput.required = true; // 強制設定為必填，唔填無得 submit
+        otherReasonInput.required = true; // 系統層面強制必填
       } else {
         otherReasonContainer.classList.add('hidden');
         otherReasonInput.value = '';
-        otherReasonInput.required = false; // 其他選項下，取消必填限制
+        otherReasonInput.required = false;
       }
     });
 
@@ -131,7 +131,7 @@
       let reason = leaveReasonSelect.value;
       if (reason === '其他') {
         const details = otherReasonInput.value.trim();
-        reason = `其他 (${details})`; // 因為是必填，所以一定有詳細原因文字
+        reason = `其他 (${details})`;
       }
 
       localStorage.setItem('casName', name);
