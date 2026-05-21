@@ -29,12 +29,23 @@
       </div>
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm tracking-wide">3. 民安隊編號 *</label>
+        <label class="block font-bold text-slate-700 mb-1.5 text-sm tracking-wide">3. 分隊組群 *</label>
+        <select id="subUnit" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white transition-all text-slate-800 font-medium shadow-sm cursor-pointer">
+          <option value="" disabled selected>-- 請選擇分隊組群 --</option>
+          <option value="CD41">CD41</option>
+          <option value="CD42">CD42</option>
+          <option value="CD43">CD43</option>
+          <option value="CD44">CD44</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-700 mb-1.5 text-sm tracking-wide">4. 民安隊編號 *</label>
         <input type="text" id="casNumber" pattern="[A-Za-z]\d{4}" title="請輸入1個英文字母加4個數字，例如 E3308" placeholder="例如：E3308" required oninput="this.value = this.value.toUpperCase()" class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none uppercase transition-all text-slate-800 font-mono font-bold tracking-wider shadow-sm">
       </div>
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm tracking-wide">4. 請假原因 *</label>
+        <label class="block font-bold text-slate-700 mb-1.5 text-sm tracking-wide">5. 請假原因 *</label>
         <select id="leaveReason" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none bg-white transition-all text-slate-800 font-medium shadow-sm cursor-pointer">
           <option value="" disabled selected>-- 請選擇請假原因 --</option>
           <option value="病假">病假 (請後補醫生紙)</option>
@@ -62,6 +73,7 @@
     const otherReasonContainer = document.getElementById('otherReasonContainer');
     const otherReasonInput = document.getElementById('otherReasonInput');
     const submitBtn = document.getElementById('submitBtn');
+    const subUnitSelect = document.getElementById('subUnit');
 
     async function loadDates() {
       try {
@@ -75,7 +87,7 @@
 
     function renderDates(dates) {
       if(!dates || dates.length === 0) {
-        trainingDateSelect.innerHTML = '<option value="" disabled selected>暫時沒有訓練場次可供選擇</option>';
+        trainingDateSelect.innerHTML = '<option value="" disabled selected>暫時沒有恆常訓練可供選擇</option>';
         return;
       }
       trainingDateSelect.innerHTML = '<option value="" disabled selected>-- 請選擇訓練日期 --</option>';
@@ -90,6 +102,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       loadDates();
       if (localStorage.getItem('casName')) document.getElementById('chineseName').value = localStorage.getItem('casName');
+      if (localStorage.getItem('casSubUnit')) subUnitSelect.value = localStorage.getItem('casSubUnit');
       if (localStorage.getItem('casNumber')) document.getElementById('casNumber').value = localStorage.getItem('casNumber');
     });
 
@@ -107,25 +120,27 @@
 
       const date = trainingDateSelect.value;
       const name = document.getElementById('chineseName').value;
+      const subUnit = subUnitSelect.value;
       const number = document.getElementById('casNumber').value.toUpperCase();
       let reason = leaveReasonSelect.value === '其他' ? `其他 (${otherReasonInput.value.trim()})` : leaveReasonSelect.value;
 
       localStorage.setItem('casName', name);
+      localStorage.setItem('casSubUnit', subUnit);
       localStorage.setItem('casNumber', number);
 
-      const message = `📋 *CD4 恆常訓練請假*\n\n📅 日期：${date}\n👤 姓名：${name}\n🔢 編號：${number}\n❓ 原因：${reason}\n\n長官，我想申請以上日子請假，唔該晒！`;
+      // 📋 WhatsApp 訊息加入組群資料
+      const message = `📋 *CD4 恆常訓練請假*\n\n📅 日期：${date}\n👤 姓名：${name}\n🗂️ 組群：${subUnit}\n🔢 編號：${number}\n❓ 原因：${reason}\n\n長官，我想申請以上日子請假，唔該晒！`;
       const whatsappUrl = `https://wa.me/85268476367?text=${encodeURIComponent(message)}`;
 
-      // ⚡ 背景續傳技術
+      // ⚡ 背景續傳技術 (傳送 5 欄數據給雲端)
       fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors', 
         keepalive: true, 
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'submitLeave', date, name, number, reason })
+        body: JSON.stringify({ action: 'submitLeave', date, name, subUnit, number, reason })
       });
 
-      // ⚡ 零秒等待全速跳轉
       window.location.href = whatsappUrl;
     });
   </script>
