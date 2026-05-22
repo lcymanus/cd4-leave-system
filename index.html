@@ -232,7 +232,9 @@
         });
         
         const whatsappNumber = '85262763435';
-        let whatsappMessage = `長官你好，本人已在系統提交請假申請，資料如下：\n\n`;
+        
+        // WhatsApp 訊息內容已更新
+        let whatsappMessage = `長官你好，我已經喺系統填咗請假表，將缺席恆常訓練一天。\n\n`;
         whatsappMessage += `📅 日期：${date}\n`;
         whatsappMessage += `👤 姓名：${name}\n`;
         whatsappMessage += `🔢 編號：${number}\n`;
@@ -240,7 +242,7 @@
         whatsappMessage += `📝 原因：${finalReason}`;
         
         if (leaveType === '病假') {
-          whatsappMessage += `\n\n(註：復操時會補交醫生證明書)`;
+          whatsappMessage += `\n\n（會盡快補交返醫生紙，唔該晒！）`;
         }
 
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
