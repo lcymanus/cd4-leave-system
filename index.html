@@ -6,25 +6,32 @@
   <title>CD4 隊員請假表</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen py-8 px-4 antialiased">
+<body class="bg-slate-50 min-h-screen py-8 px-4 antialiased text-slate-800">
   
-  <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-100">
     
-    <div class="bg-blue-700 p-5 text-white text-center">
-      <h1 class="text-xl font-bold tracking-wide">CD4 隊員請假表</h1>
-      <p class="text-xs mt-1 opacity-80">恆常訓練請假申請</p>
+    <div class="bg-blue-800 p-6 text-white text-center shadow-inner">
+      <h1 class="text-2xl font-bold tracking-wide">CD4 隊員請假表</h1>
+      <p class="text-sm mt-1.5 text-blue-100">恆常訓練請假申請</p>
     </div>
 
-    <form id="leaveForm" class="p-6 space-y-5">
+    <form id="leaveForm" class="p-6 space-y-6">
       
       <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm">1. 中文姓名 *</label>
-        <input type="text" id="chineseName" placeholder="例如：陳大文" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-800">
+        <label class="block font-bold text-slate-700 mb-2 text-sm">1. 請假日期 *</label>
+        <select id="leaveDate" required class="w-full p-3 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none bg-white font-medium transition-all">
+          <option value="" disabled selected>正在載入日期...</option>
+        </select>
       </div>
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm">2. 分隊組群 *</label>
-        <select id="subUnit" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white text-slate-800">
+        <label class="block font-bold text-slate-700 mb-2 text-sm">2. 中文姓名 *</label>
+        <input type="text" id="chineseName" placeholder="例如：陳大文" required class="w-full p-3 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-700 mb-2 text-sm">3. 分隊組群 *</label>
+        <select id="subUnit" required class="w-full p-3 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none bg-white transition-all">
           <option value="" disabled selected>-- 請選擇 --</option>
           <option value="CD41">CD41</option>
           <option value="CD42">CD42</option>
@@ -34,26 +41,34 @@
       </div>
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm">3. 民安隊編號 *</label>
-        <input type="text" id="casNumber" pattern="[A-Za-z]\d{4}" title="請輸入1個英文字母加4個數字，例如 E3308" placeholder="例如：E3308" required oninput="this.value = this.value.toUpperCase()" class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none uppercase text-slate-800 font-mono">
+        <label class="block font-bold text-slate-700 mb-2 text-sm">4. 民安隊編號 *</label>
+        <input type="text" id="casNumber" pattern="[A-Za-z]\d{4}" title="請輸入1個英文字母加4個數字，例如 E3308" placeholder="例如：E3308" required oninput="this.value = this.value.toUpperCase()" class="w-full p-3 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none uppercase font-mono transition-all">
       </div>
 
-      <hr class="border-slate-200 my-4">
+      <hr class="border-slate-200">
 
       <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm">4. 請假日期 *</label>
-        <select id="leaveDate" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white text-slate-800 font-medium">
-          <option value="" disabled selected>正在載入日期...</option>
+        <label class="block font-bold text-slate-700 mb-2 text-sm">5. 請假類別 *</label>
+        <select id="leaveType" required class="w-full p-3 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none bg-white transition-all">
+          <option value="" disabled selected>-- 請選擇請假原因 --</option>
+          <option value="病假">病假</option>
+          <option value="事假">事假</option>
+          <option value="返學或考試">返學或考試</option>
         </select>
+
+        <p id="sickLeaveNote" class="hidden text-sm text-amber-600 mt-2 font-medium flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+          溫馨提示：請於復操時補交醫生證明書予長官。
+        </p>
+
+        <div id="personalLeaveDiv" class="hidden mt-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <label class="block font-bold text-blue-800 mb-1.5 text-sm">詳細事假原因 <span class="text-xs font-normal text-blue-600">(需供長官審核)</span> *</label>
+          <input type="text" id="personalLeaveDetail" placeholder="請具體說明事假原因..." class="w-full p-2.5 border border-blue-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none">
+        </div>
       </div>
 
-      <div>
-        <label class="block font-bold text-slate-700 mb-1.5 text-sm">5. 請假原因 *</label>
-        <input type="text" id="leaveReason" placeholder="例如：返工 / 考試 / 病假" required class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-800">
-      </div>
-
-      <button type="submit" id="submitBtn" class="w-full mt-4 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-        提交請假申請
+      <button type="submit" id="submitBtn" class="w-full mt-2 bg-blue-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md hover:shadow-lg">
+        提交並發送 WhatsApp 通知
       </button>
     </form>
   </div>
@@ -61,6 +76,31 @@
   <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2pbjpqpWN0StsLaF-1r8vIgs5CHmkfunzJTNfl4iOb_0YPETYXFgmxMzRmKuXWgHQXQ/exec';
     
+    // 監聽請假類別變化，動態顯示隱藏欄位
+    document.getElementById('leaveType').addEventListener('change', function(e) {
+      const type = e.target.value;
+      const sickNote = document.getElementById('sickLeaveNote');
+      const personalDiv = document.getElementById('personalLeaveDiv');
+      const personalInput = document.getElementById('personalLeaveDetail');
+
+      // 控制病假提示顯示
+      if (type === '病假') {
+        sickNote.classList.remove('hidden');
+      } else {
+        sickNote.classList.add('hidden');
+      }
+
+      // 控制事假輸入框顯示及必填屬性
+      if (type === '事假') {
+        personalDiv.classList.remove('hidden');
+        personalInput.required = true;
+      } else {
+        personalDiv.classList.add('hidden');
+        personalInput.required = false;
+        personalInput.value = ''; // 清空不相關內容
+      }
+    });
+
     // 頁面載入時執行
     window.addEventListener('DOMContentLoaded', async () => {
       // 自動填入上次輸入的個人資料
@@ -79,7 +119,6 @@
           return;
         }
         
-        // 確保日期排序
         dates.sort((a, b) => a.date.localeCompare(b.date));
         
         dateSelect.innerHTML = '<option value="" disabled selected>-- 請選擇請假日期 --</option>';
@@ -100,13 +139,21 @@
       
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
-      submitBtn.innerText = '正在提交...';
+      submitBtn.innerText = '正在處理中...';
 
+      const date = document.getElementById('leaveDate').value;
       const name = document.getElementById('chineseName').value.trim();
       const subUnit = document.getElementById('subUnit').value;
       const number = document.getElementById('casNumber').value.toUpperCase().trim();
-      const date = document.getElementById('leaveDate').value;
-      const reason = document.getElementById('leaveReason').value.trim();
+      
+      // 處理請假原因邏輯
+      const leaveType = document.getElementById('leaveType').value;
+      let finalReason = leaveType;
+      
+      if (leaveType === '事假') {
+        const detail = document.getElementById('personalLeaveDetail').value.trim();
+        finalReason = `事假 - ${detail}`; // 結合成單一字串，確保 Sheet 規律不變
+      }
 
       // 儲存個人資料方便下次使用
       localStorage.setItem('casName', name);
@@ -119,11 +166,12 @@
         name: name,
         subUnit: subUnit,
         number: number,
-        reason: reason,
-        role: 'member' // 確保寫入「隊員請假名單」
+        reason: finalReason,
+        role: 'member'
       };
 
       try {
+        // 發送資料到 Google Sheet
         await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
@@ -131,15 +179,37 @@
           body: JSON.stringify(payload)
         });
         
-        alert('請假申請已成功提交！');
-        document.getElementById('leaveReason').value = ''; // 清空原因，方便可能要請多日假
-        document.getElementById('leaveDate').value = '';   // 重置日期
+        // 準備 WhatsApp 預設訊息
+        const whatsappNumber = '85262763435';
+        let whatsappMessage = `長官你好，本人已在系統提交請假申請，資料如下：\n\n`;
+        whatsappMessage += `📅 日期：${date}\n`;
+        whatsappMessage += `👤 姓名：${name}\n`;
+        whatsappMessage += `🔢 編號：${number}\n`;
+        whatsappMessage += `🏷️ 分隊：${subUnit}\n`;
+        whatsappMessage += `📝 原因：${finalReason}`;
+        
+        if (leaveType === '病假') {
+          whatsappMessage += `\n\n(註：復操時會補交醫生證明書)`;
+        }
+
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+
+        // 提示用戶並自動跳轉至 WhatsApp
+        alert('請假申請已成功上傳！將自動為您開啟 WhatsApp 通知長官。');
+        window.open(whatsappUrl, '_blank'); // 開啟 WhatsApp
+        
+        // 重置表單狀態
+        document.getElementById('leaveType').value = '';
+        document.getElementById('leaveDate').value = '';
+        document.getElementById('personalLeaveDetail').value = '';
+        document.getElementById('personalLeaveDiv').classList.add('hidden');
+        document.getElementById('sickLeaveNote').classList.add('hidden');
         
       } catch (e) {
         alert('提交失敗，請檢查網絡連線後重試。');
       } finally {
         submitBtn.disabled = false;
-        submitBtn.innerText = '提交請假申請';
+        submitBtn.innerText = '提交並發送 WhatsApp 通知';
       }
     });
   </script>
