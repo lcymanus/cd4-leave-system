@@ -67,7 +67,8 @@
         </div>
       </div>
 
-      <button type="submit" id="submitBtn" class="w-full mt-2 bg-blue-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-all shadow-md hover:shadow-lg">
+      <button type="submit" id="submitBtn" class="w-full mt-2 bg-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-emerald-700 active:bg-emerald-800 transition-all shadow-md hover:shadow-lg flex justify-center items-center">
+        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.52 3.449A11.95 11.95 0 0 0 12 0c-6.627 0-12 5.373-12 12 0 2.115.552 4.148 1.6 5.945L0 24l6.236-1.618A11.93 11.93 0 0 0 12 24c6.627 0 12-5.373 12-12 0-3.205-1.248-6.22-3.48-8.551zM12 21.974a9.92 9.92 0 0 1-5.06-1.385l-.36-.214-3.766.976 1.006-3.636-.236-.37A9.87 9.87 0 0 1 2.03 12C2.03 6.495 6.525 2 12.03 2c2.671 0 5.182 1.04 7.07 2.929C20.988 6.818 22.03 9.329 22.03 12c0 5.505-4.495 10-10.03 10l-.001-.026zm5.495-7.513c-.3-.15-1.785-.882-2.062-.982-.278-.101-.48-.15-.683.15-.202.301-.782.982-.958 1.183-.177.202-.354.225-.655.075-.301-.15-1.275-.47-2.428-1.503-.898-.806-1.503-1.802-1.68-2.103-.177-.301-.018-.465.132-.615.136-.135.301-.35.451-.525.15-.175.202-.301.301-.502.101-.202.05-.375-.025-.525-.075-.15-.683-1.65-.935-2.261-.247-.597-.497-.515-.683-.525-.177-.01-.38-.01-.58-.01-.2 0-.525.075-.8.375-.275.301-1.05 1.025-1.05 2.503s1.075 2.9 1.225 3.1c.15.2 2.115 3.225 5.125 4.525.716.308 1.275.493 1.71.63.717.228 1.368.195 1.884.118.578-.086 1.785-.73 2.035-1.435.25-.705.25-1.31.175-1.435-.075-.125-.275-.2-.575-.35z"/></svg>
         提交並發送 WhatsApp 通知
       </button>
     </form>
@@ -76,34 +77,29 @@
   <script>
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2pbjpqpWN0StsLaF-1r8vIgs5CHmkfunzJTNfl4iOb_0YPETYXFgmxMzRmKuXWgHQXQ/exec';
     
-    // 監聽請假類別變化，動態顯示隱藏欄位
     document.getElementById('leaveType').addEventListener('change', function(e) {
       const type = e.target.value;
       const sickNote = document.getElementById('sickLeaveNote');
       const personalDiv = document.getElementById('personalLeaveDiv');
       const personalInput = document.getElementById('personalLeaveDetail');
 
-      // 控制病假提示顯示
       if (type === '病假') {
         sickNote.classList.remove('hidden');
       } else {
         sickNote.classList.add('hidden');
       }
 
-      // 控制事假輸入框顯示及必填屬性
       if (type === '事假') {
         personalDiv.classList.remove('hidden');
         personalInput.required = true;
       } else {
         personalDiv.classList.add('hidden');
         personalInput.required = false;
-        personalInput.value = ''; // 清空不相關內容
+        personalInput.value = '';
       }
     });
 
-    // 頁面載入時執行
     window.addEventListener('DOMContentLoaded', async () => {
-      // 自動填入上次輸入的個人資料
       if (localStorage.getItem('casName')) document.getElementById('chineseName').value = localStorage.getItem('casName');
       if (localStorage.getItem('casSubUnit')) document.getElementById('subUnit').value = localStorage.getItem('casSubUnit');
       if (localStorage.getItem('casNumber')) document.getElementById('casNumber').value = localStorage.getItem('casNumber');
@@ -121,41 +117,63 @@
         
         dates.sort((a, b) => a.date.localeCompare(b.date));
         
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         dateSelect.innerHTML = '<option value="" disabled selected>-- 請選擇請假日期 --</option>';
+        let validDatesCount = 0;
+
         dates.forEach(d => {
-          const option = document.createElement('option');
-          option.value = `${d.date} (${d.time})`;
-          option.textContent = `${d.date} (${d.time})`;
-          dateSelect.appendChild(option);
+          const optionDate = new Date(d.date);
+          optionDate.setHours(0, 0, 0, 0);
+
+          if (isNaN(optionDate) || optionDate >= today) {
+            const option = document.createElement('option');
+            option.value = `${d.date} (${d.time})`;
+            option.textContent = `${d.date} (${d.time})`;
+            dateSelect.appendChild(option);
+            validDatesCount++;
+          }
         });
+
+        if (validDatesCount === 0) {
+          dateSelect.innerHTML = '<option disabled selected>暫時沒有未來的訓練日期</option>';
+        }
+
       } catch (e) {
         dateSelect.innerHTML = '<option disabled selected>載入失敗，請檢查網絡連線</option>';
       }
     });
 
-    // 處理表單提交
     document.getElementById('leaveForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const submitBtn = document.getElementById('submitBtn');
+      // 保留原有按鈕內容以便後續還原
+      const originalBtnContent = submitBtn.innerHTML;
+      
       submitBtn.disabled = true;
-      submitBtn.innerText = '正在處理中...';
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        正在處理中...
+      `;
 
       const date = document.getElementById('leaveDate').value;
       const name = document.getElementById('chineseName').value.trim();
       const subUnit = document.getElementById('subUnit').value;
       const number = document.getElementById('casNumber').value.toUpperCase().trim();
       
-      // 處理請假原因邏輯
       const leaveType = document.getElementById('leaveType').value;
       let finalReason = leaveType;
       
       if (leaveType === '事假') {
         const detail = document.getElementById('personalLeaveDetail').value.trim();
-        finalReason = `事假 - ${detail}`; // 結合成單一字串，確保 Sheet 規律不變
+        finalReason = `事假 - ${detail}`; 
       }
 
-      // 儲存個人資料方便下次使用
       localStorage.setItem('casName', name);
       localStorage.setItem('casSubUnit', subUnit);
       localStorage.setItem('casNumber', number);
@@ -171,7 +189,6 @@
       };
 
       try {
-        // 發送資料到 Google Sheet
         await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
@@ -179,7 +196,6 @@
           body: JSON.stringify(payload)
         });
         
-        // 準備 WhatsApp 預設訊息
         const whatsappNumber = '85262763435';
         let whatsappMessage = `長官你好，本人已在系統提交請假申請，資料如下：\n\n`;
         whatsappMessage += `📅 日期：${date}\n`;
@@ -194,11 +210,9 @@
 
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
-        // 提示用戶並自動跳轉至 WhatsApp
         alert('請假申請已成功上傳！將自動為您開啟 WhatsApp 通知長官。');
-        window.open(whatsappUrl, '_blank'); // 開啟 WhatsApp
+        window.open(whatsappUrl, '_blank'); 
         
-        // 重置表單狀態
         document.getElementById('leaveType').value = '';
         document.getElementById('leaveDate').value = '';
         document.getElementById('personalLeaveDetail').value = '';
@@ -209,7 +223,7 @@
         alert('提交失敗，請檢查網絡連線後重試。');
       } finally {
         submitBtn.disabled = false;
-        submitBtn.innerText = '提交並發送 WhatsApp 通知';
+        submitBtn.innerHTML = originalBtnContent;
       }
     });
   </script>
